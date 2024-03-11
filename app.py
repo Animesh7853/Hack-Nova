@@ -6,9 +6,10 @@ from dotenv import load_dotenv
 load_dotenv()   # load env varibles 
 from PIL import Image 
 import json
+from streamlit_option_menu import option_menu
+import time
 
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-
 
 def get_gemini_response(input_promt , image):
     model = genai.GenerativeModel('gemini-pro-vision')
@@ -38,7 +39,29 @@ st.header("NutriLens")
 
 
 # Navigation menu
-page = st.sidebar.radio("Navigation", ["Home", "About Us", "Contact Us", "Chat-Bot"])
+with st.sidebar:
+    page = option_menu(
+        menu_title=None,
+        options=["Home", "ChatBot", "Meal Planning", "About Us", "Contact Us"],
+        icons=["house", "android", "sunset","person-vcard","phone-landscape"],
+        menu_icon="cast",
+        default_index= 0,
+       
+    )
+
+# Custom CSS style to change the background color of the selectbox
+custom_style = """
+<style>
+/* Change background color of selectbox options */
+.css-1wy0on6 {
+    background-color: lightblue; /* Change to your desired background color */
+}
+</style>
+"""
+
+# Display custom CSS style
+st.markdown(custom_style, unsafe_allow_html=True)
+
 
 def parse_gemini_response(response):
     # Parse the JSON response to extract x and y values for plotting
@@ -148,6 +171,9 @@ if page == "Home":
         if uploaded_file is not None: 
             image_data= input_image_setup(uploaded_file)
             response = get_gemini_response(input_prompt,image_data)
+            # a dedicated single loader 
+            with hc.HyLoader('Now doing loading',hc.Loaders.pulse_bars,):
+                time.sleep(5)
             st.header("Full Description about the food are...")
             st.write(response)
         else:
@@ -201,7 +227,7 @@ if page == "Contact Us":
     """)
 
  
-if page == "Chat-Bot":
+if page == "ChatBot":
 
     def interact_with_chatbot(prompt):
         # Generate a response from the chatbot model
@@ -218,13 +244,56 @@ if page == "Chat-Bot":
 
     if st.button("Send"):
         # Display user input
-        st.text("You: " + user_input)
+        if user_input.strip():
+            st.text("You: " + user_input)
 
-        # Get response from chatbot
-        response = interact_with_chatbot(user_input)
+            # Get response from chatbot
+            response = interact_with_chatbot(user_input)
 
-        # Display chatbot response
-        st.text("Bot: " + response)
+            # Display chatbot response
+            st.text("Bot: " + response)
+        else:
+            st.error("Please enter your text")
+
+if page == "Meal Planning":
+        # Title
+    st.title("Meal Planning")
+
+    # Form for meal planning options
+    with st.form("meal_planning_form"):
+        # Define options for spices
+        spices_options = ["No spices", "Mild", "Medium", "Spicy"]
+        spices = st.selectbox("Spices", spices_options)
+
+        # Define options for taste
+        taste_options = ["Sweet", "Salty", "Sour", "Bitter", "Umami"]
+        taste = st.multiselect("Taste", taste_options)
+
+        # Define options for dietary preferences
+        dietary_preferences = st.checkbox("Vegetarian")
+        
+        cuisine_options = ["Any Cuisine","North Indian", "South Indian", "Continental", "Chinese"]
+        cuisine = st.selectbox("Choose your cuisine:", cuisine_options)
+        # Define options for allergies
+        allergies = st.text_input("Enter any allergies")
+
+        # Submit button
+        submitted = st.form_submit_button("Plan Meal")
+
+    # Generate prompt string based on user selections
+    prompt = f"Meal planning options:\nSpices: {spices}\nTaste: {', '.join(taste)}\nVegetarian: {'Yes' if dietary_preferences else 'No'}\nAllergies: {allergies}\nCuisines:{cuisine}"
+
+    # Display meal planning results based on user selections
+    if submitted:
+        # Get response from Gemini
+        model = genai.GenerativeModel('gemini-pro')
+        response = model.generate_content(prompt)
+
+        # Display Gemini response
+        st.write("Some of the best meals option:")
+        st.write(response.text)
+
+
 
 
 # Add a footer with hyperlinks
