@@ -27,7 +27,6 @@ def input_image_setup(upload_file):
         ]
 
         return image_parts  
-    
     else :
         raise FileNotFoundError("NO File uploaded ")
     
@@ -39,7 +38,7 @@ st.header("NutriLens")
 
 
 # Navigation menu
-page = st.sidebar.radio("Navigation", ["Home", "About Us", "Contact Us"])
+page = st.sidebar.radio("Navigation", ["Home", "About Us", "Contact Us", "Chat-Bot"])
 
 def parse_gemini_response(response):
     # Parse the JSON response to extract x and y values for plotting
@@ -47,8 +46,6 @@ def parse_gemini_response(response):
     x_values = data["data"][0]["x"]
     y_values = data["data"][0]["y"]
     return x_values, y_values
-
-
 
 
 # Define the content for each page
@@ -59,10 +56,17 @@ if page == "Home":
     if uploaded_file is not None:
         image = Image.open(uploaded_file)
         st.image(image, caption="Uploaded Image.", use_column_width=True)
-    
-    submit = st.button("Get the full details of the food")
-    graph = st.button("Generate Graph")
-    piechart = st.button("Get Pie Chart")
+        
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        submit = st.button("Get the full details of the food")
+
+    with col2:
+        graph = st.button("Generate Graph of the Data")
+
+    with col3:
+        piechart = st.button("Get Pie Chart")
 
 
     input_prompt = """
@@ -141,10 +145,14 @@ if page == "Home":
 
 
     if submit:
-        image_data= input_image_setup(uploaded_file)
-        response = get_gemini_response(input_prompt,image_data)
-        st.header("Full Description about the food are...")
-        st.write(response)
+        if uploaded_file is not None: 
+            image_data= input_image_setup(uploaded_file)
+            response = get_gemini_response(input_prompt,image_data)
+            st.header("Full Description about the food are...")
+            st.write(response)
+        else:
+            st.error("Please upload an image first.")
+
 
 if page == "About Us":
     st.header("About Us")  
@@ -152,45 +160,72 @@ if page == "About Us":
     NutriLens is a nutritionist tool developed to analyze food items from images and provide detailed information about their nutritional content. 
     Our team is passionate about helping individuals make healthier food choices by providing accurate and insightful data about their diet.
     
-    *Key Features:*
+    Key Features:
     
-    - *Food Recognition:* NutriLens uses advanced image recognition technology to identify various food items in an image.
+    - Food Recognition: NutriLens uses advanced image recognition technology to identify various food items in an image.
     
-    - *Calorie Calculation:* It calculates the total calories of the food items detected in the image.
+    - Calorie Calculation: It calculates the total calories of the food items detected in the image.
     
-    - *Nutritional Details:* NutriLens provides detailed information about the nutritional content of each food item, including the breakdown of carbohydrates, fats, fibers, sugar, and other nutrients.
+    - Nutritional Details: NutriLens provides detailed information about the nutritional content of each food item, including the breakdown of carbohydrates, fats, fibers, sugar, and other nutrients.
     
-    - *Health Assessment:* Based on the nutritional information, NutriLens assesses whether the food is healthy or not and suggests alternate recipes with better nutrition.
+    - Health Assessment: Based on the nutritional information, NutriLens assesses whether the food is healthy or not and suggests alternate recipes with better nutrition.
     
-    *Meet the Team:*
+    Meet the Team:
     
-    - *Awnish Ranjan:* [LinkedIn](https://www.linkedin.com/in/awnish-ranjan-93a725251/)
+    - Awnish Ranjan: [LinkedIn](https://www.linkedin.com/in/awnish-ranjan-93a725251/)
     
-    - *Swati Swapna:* [LinkedIn](https://www.linkedin.com/in/swati-swapna/)
+    - Swati Swapna: [LinkedIn](https://www.linkedin.com/in/swati-swapna/)
     
-    - *Animesh Jha:* [LinkedIn](https://www.linkedin.com/in/animesh-jha-6bb9721b4/)
+    - Animesh Jha: [LinkedIn](https://www.linkedin.com/in/animesh-jha-6bb9721b4/)
     
-    - *Ujjawal Kantt:* [LinkedIn](https://www.linkedin.com/in/ujjawal-kantt-069aba269/)
+    - Ujjawal Kantt: [LinkedIn](https://www.linkedin.com/in/ujjawal-kantt-069aba269/)
     
     We are committed to providing users with a valuable tool to improve their nutritional habits and overall health.
     """)
     
-elif page == "Contact Us":
+if page == "Contact Us":
     st.header("Contact Us")
     st.write("""
     Thank you for your interest in NutriLens! If you have any questions, feedback, or suggestions, please feel free to reach out to us.
     
-    *Email:* contact@nutrilens.com
+    Email: contact@nutrilens.com
     
-    *Phone:* +91 (...........)
+    Phone: +91 (...........)
     
-    *Address:* 
+    Address: 
     NutriLens Headquarters
     123 Nutrition Street
     Healthyville, NutriLand
     
     We look forward to hearing from you!
     """)
+
+ 
+if page == "Chat-Bot":
+
+    def interact_with_chatbot(prompt):
+        # Generate a response from the chatbot model
+        model = genai.GenerativeModel('gemini-pro')
+      
+        response = model.generate_content(prompt)
+        return response.text
+
+    # Define Streamlit app
+    st.title("Chat with our bot")
+
+    # Get user input
+    user_input = st.text_input("You: ")
+
+    if st.button("Send"):
+        # Display user input
+        st.text("You: " + user_input)
+
+        # Get response from chatbot
+        response = interact_with_chatbot(user_input)
+
+        # Display chatbot response
+        st.text("Bot: " + response)
+
 
 # Add a footer with hyperlinks
 st.markdown(
